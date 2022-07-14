@@ -15,18 +15,21 @@ class MyPeer{
     })
 
     document.addEventListener('message',(e)=>{
-      console.log(e.detail.peer,": ",e.detail.message);
-      if(!this.messages.includes(JSON.stringify(e.detail))){
-        this.messages.push(JSON.stringify(e.detail));
+      console.log(e.detail.author,": ",e.detail.message);
+      let peer = e.detail.peer;
+      var data = e.detail;
+      delete data.peer;
+      
+      if(!this.messages.includes(JSON.stringify(data))){
+        this.messages.push(JSON.stringify(data));
         this.connections.forEach(conn => {
-          if(conn.peer != e.detail.peer){
-            conn.sendData(e.detail);
-            console.log("propagated data");
+          if(conn.peer != peer){
+            data.peer = this.id;
+            conn.sendData(data);
+            // console.log("propagated data");
           }
         })
       }
-      console.log("MESSAGES",this.messages);
-      console.log("MESSAGE",e.detail);
     })
   }
   newConnection(conn){
@@ -42,6 +45,7 @@ class MyPeer{
       id:uuidv4(),
       type: "message",
       peer:this.id,
+      author:this.id,
       message: message
     }
     const messageEvent = new CustomEvent('message',{detail:data})
@@ -73,6 +77,7 @@ class MyConnection{
       //   message: message
       // }
       if(data.type == "message"){
+        data.peer = this.peer;
         const messageEvent = new CustomEvent('message',{detail:data})
         document.dispatchEvent(messageEvent);
       }
